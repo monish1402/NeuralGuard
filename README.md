@@ -1,9 +1,5 @@
 # NeuralGuard: Automated Mechanical Component Quantification
 
-![PyTorch](https://img.shields.io/badge/PyTorch-%23EE4C2C.svg?style=for-the-badge&logo=PyTorch&logoColor=white)
-![Python](https://img.shields.io/badge/python-3670A0?style=for-the-badge&logo=python&logoColor=ffdd54)
-![License](https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge)
-![Status](https://img.shields.io/badge/Status-Research_Prototype-green?style=for-the-badge)
 
 **NeuralGuard** is a deep learning system designed to solve a fine-grained computer vision problem: the simultaneous counting of multiple mechanical parts (Bolts, Locating Pins, Nuts, and Washers) within a single image.
 
