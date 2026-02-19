@@ -1,61 +1,61 @@
 # NeuralGuard: Automated Mechanical Component Quantification
 
+This repository contains a deep learning solution for automated parts counting, developed for the SolidWorks AI Hackathon. The project utilizes an EfficientNet-B3 backbone to perform multi-label regression, predicting the quantity of four specific mechanical components in an image: bolts, locating pins, nuts, and washers.
 
-**NeuralGuard** is a deep learning system designed to solve a fine-grained computer vision problem: the simultaneous counting of multiple mechanical parts (Bolts, Locating Pins, Nuts, and Washers) within a single image.
+Project Overview
+The core objective is to accurately count individual parts within cluttered scenes. The model architecture and training pipeline are optimized for high-precision counting, achieving over 99% exact match accuracy on the validation set.
 
-Unlike standard object detection pipelines (e.g., YOLO), this project utilizes a **Global Multi-Output Regression** approach to achieve high-speed inference and "Exact Match" accuracy without the need for bounding box annotations.
+Key Features
+Backbone: tf_efficientnet_b3_ns (Noisy Student pretrained).
 
----
+Custom Head: Features multiple dropout layers and a Mish activation function for robust feature processing.
 
-## 📌 Problem Statement
+Loss Function: Huber Loss, chosen for its robustness to outliers compared to MSE.
 
-The objective is to predict the count of four distinct components in synthetic images. 
+Augmentation: Extensive spatial augmentations using the Albumentations library, including random rotations (90°), horizontal flips, and vertical flips.
 
-**The Challenge:** The evaluation metric is **Exact Match Accuracy**. A prediction is considered correct *only* if the counts for **all four** categories match the ground truth exactly. 
-* *Prediction:* `[Bolt: 4, Pin: 0, Nut: 2, Washer: 1]`
-* *Truth:* `[Bolt: 4, Pin: 0, Nut: 2, Washer: 2]` 
-* *Result:* **FAIL** (0.0 Accuracy)
+Optimization: AdamW optimizer with Mixed Precision training (AMP) for faster convergence and reduced memory footprint.
 
-This zero-tolerance constraint necessitates a model architecture robust to outliers and capable of precise integer regression.
 
----
+Technical Implementation
+Data Processing
+The PartsDataset class handles image loading via OpenCV and converts them to RGB. Images are resized to 512x512 pixels. During training, labels are processed as float tensors for regression tasks.
 
-## 🏗️ Architecture & Methodology
+Model Architecture
+Python
+class CountModel(nn.Module):
+    def __init__(self, model_name):
+        self.backbone = timm.create_model(model_name, pretrained=True, num_classes=0)
+        self.head = nn.Sequential(
+            nn.Dropout(0.2),
+            nn.Linear(self.backbone.num_features, 512),
+            nn.Mish(),
+            nn.Dropout(0.2),
+            nn.Linear(512, 4)
+        )
+Training Pipeline
+The pipeline runs for 15 epochs with a learning rate of 1e-4. It employs an "Exact Match" metric for validation, ensuring that a prediction is only counted as accurate if the counts for all four categories are perfectly correct after rounding.
 
-### 1. The Backbone: EfficientNet-B3 (Noisy Student)
-We utilize **EfficientNet-B3** pre-trained on ImageNet with "Noisy Student" weights.
-* **Why:** B3 offers an optimal trade-off between parameter efficiency and feature extraction depth.
-* **Benefit:** The "Noisy Student" pre-training provides superior robustness to visual noise and occlusions compared to standard supervised pre-training.
+Getting Started
+Environment: Optimized for GPU acceleration (specifically tested on Kaggle with CUDA support).
 
-### 2. Custom Regression Head
-The standard classification head was replaced with a density-estimation block:
-* **Pooling:** Adaptive Average Pooling.
-* **Hidden Layer:** Linear (1536 $\to$ 512) with **Mish Activation**.
-* **Regularization:** Dropout (p=0.2) to prevent overfitting on synthetic textures.
-* **Output:** Linear layer predicting 4 continuous floating-point values.
+Dependencies:
 
-### 3. Optimization Strategy
-* **Loss Function: Huber Loss.** chosen over MSE to prevent gradient explosion from outliers (e.g., confusing a texture for a massive cluster of nuts).
-* **Optimizer:** AdamW with Cosine Annealing scheduler.
-* **Mixed Precision:** Implemented `torch.cuda.amp` (FP16) for accelerated training.
+torch & torchvision
 
----
+timm (PyTorch Image Models)
 
-## 📊 Dataset & Preprocessing
+albumentations
 
-The dataset consists of synthetic images containing randomized clusters of parts.
+opencv-python
 
-| Component | Class Index |
-| :--- | :--- |
-| **Bolt** | 0 |
-| **Locating Pin** | 1 |
-| **Nut** | 2 |
-| **Washer** | 3 |
+pandas & numpy
 
-**Pipeline:**
-* **Input Resolution:** 512x512 pixels.
-* **Normalization:** ImageNet mean/std statistics.
-* **Augmentation (Albumentations):**
-    * `RandomRotate90`, `Flip`, `ShiftScaleRotate` to force the model to learn geometric invariants (shape/texture) rather than pixel positions.
+Inference: The notebook includes a dedicated inference loop that loads the best_model.pth, processes the test set, and generates a submission.csv.
 
----
+Performance
+During the final training run, the model achieved the following metrics:
+
+Training Loss: ~0.0031
+
+Validation Exact Match Accuracy: 99.70%
