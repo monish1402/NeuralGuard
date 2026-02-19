@@ -1,85 +1,52 @@
-#NeuralGuard: Automated Parts Counting Model
-NeuralGuard is a deep learning-based computer vision solution designed to accurately count mechanical parts in cluttered scenes. Developed for the SolidWorks AI Hackathon, the model leverages a state-of-the-art EfficientNet-B3 backbone to perform multi-label regression for part quantification.
+# NeuralGuard: Automated Parts Counting Model
 
-#🎯 Objective
-The primary goal is to predict the quantity of four specific mechanical components within an image:
+NeuralGuard is a state-of-the-art computer vision system developed for the **SolidWorks AI Hackathon** to automate the counting of mechanical components in cluttered industrial scenes. By leveraging a multi-label regression approach, the model provides high-precision quantification across four hardware categories: **Bolts, Locating Pins, Nuts, and Washers**.
 
-Bolts
+---
 
-Locating Pins
+## 🚀 Key Performance Results
+* **Exact Match Accuracy**: **99.70%** (Validation set)
+* **Training Loss**: **0.0031** (Huber Loss)
+* **Inference Capacity**: Processed 2,000 test images with automated submission generation.
 
-Nuts
+---
 
-Washers
+## 🏗️ Model Architecture
+The system utilizes a custom regression architecture optimized for feature extraction and numerical precision:
+* **Backbone**: `tf_efficientnet_b3_ns` (Noisy Student) pretrained backbone.
+* **Custom Head**: 
+    * Dropout layers (0.2) for robust regularization.
+    * Dense layers (512 units) for high-dimensional feature mapping.
+    * **Mish Activation** for improved gradient flow during backpropagation.
+    * Final output layer with 4 units for multi-category regression.
 
-#🏗️ Model Architecture
-The project employs a custom regression head built on top of a pre-trained backbone:
+---
 
-Backbone: tf_efficientnet_b3_ns (Noisy Student) from the timm library.
+## 🛠️ Technical Implementation
 
-Custom Head:
+### Data Pipeline & Augmentation
+NeuralGuard uses the `albumentations` library to ensure spatial invariance and model robustness.
+* **Input Resolution**: 512 x 512 pixels.
+* **Augmentations**: Horizontal Flip, Vertical Flip, and Random 90° Rotations.
+* **Normalization**: Standard ImageNet statistics (Mean: [0.485, 0.456, 0.406]).
 
-Dropout layer (0.2) for regularization.
+### Optimization Strategy
+* **Loss Function**: **Huber Loss**, selected for its resilience to outliers compared to standard MSE.
+* **Optimizer**: **AdamW** with a learning rate of `1e-4`.
+* **Mixed Precision**: Leverages `torch.cuda.amp` to accelerate training and reduce GPU memory overhead.
+* **Evaluation Metric**: **Exact Match Accuracy** — a strict validator requiring perfect rounded predictions for all four classes simultaneously.
 
-Linear layer (512 units).
+---
 
-Mish activation function.
+## 📁 Repository Structure
+* `neuralguard-1.ipynb`: The complete end-to-end pipeline (EDA, Training, Validation, Inference).
+* `best_model.pth`: Serialized weights for the top-performing model epoch.
+* `submission.csv`: Final predicted counts for the competition test set.
 
-Secondary dropout layer (0.2).
+---
 
-Final output layer (4 units) for multi-label regression.
+## 🚀 Getting Started
 
-#🧪 Technical Strategy
-Data Processing & Augmentation
-Input Size: 512x512 pixels.
-
-Augmentations: To ensure spatial robustness, the pipeline uses the albumentations library for:
-
-Horizontal & Vertical Flips.
-
-90-degree Random Rotations.
-
-Normalization: Standard ImageNet mean and standard deviation.
-
-Training Configuration
-Loss Function: Huber Loss, used for its robustness to outliers in regression tasks.
-
-Optimizer: AdamW with a learning rate of 1e-4.
-
-Training Specs: 15 epochs with a batch size of 16.
-
-Precision: Mixed Precision training (AMP) via GradScaler for optimized performance on modern GPUs.
-
-Evaluation Metric
-The model is evaluated using Exact Match Accuracy. A prediction is only considered correct if the rounded counts for all four categories match the ground truth perfectly.
-
-#📈 Performance
-In its final training run, the model achieved exceptional results on the validation set:
-
-Final Training Loss: 0.0031
-
-Validation Exact Match Accuracy: 99.70%
-
-#📁 Repository Structure
-neuralguard-1.ipynb: The complete development pipeline including EDA, training, and inference.
-
-best_model.pth: Saved weights for the highest-performing validation epoch.
-
-submission.csv: Generated predictions for the competition test set.
-
-#🚀 Getting Started
-Dependencies
-Bash
-pip install torch torchvision timm albumentations opencv-python pandas numpy tqdm
-Dataset Requirement
-The pipeline expects the following structure (optimized for Kaggle environments):
-
-#Plaintext
-/kaggle/input/solidworks-ai-hackathon/
-├── train/          # Training images
-├── test/           # Test images
-└── train_labels.csv # Labels for training
-#🛠️ Usage
-Training: Run the first 7 cells of the notebook to initialize the dataset, build the model, and begin the training loop.
-
-Inference: The final cells load best_model.pth, process the test/ directory, and generate a submission.csv containing predicted counts for the 2,000 test images.
+### Installation
+```bash
+pip install torch torchvision timm albumentations opencv-python pandas
